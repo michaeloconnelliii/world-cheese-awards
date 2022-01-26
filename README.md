@@ -20,6 +20,9 @@
 * backend.py
     * Handles requests by uri, pulls requested data from the database, formats the data appropriately for our frontend (Javascript) to use in Google Maps and AnyChart and returns the data for our frontend.
 
+* dbConnector.py
+   * Connects to our database using a credentials file or environment variables on a server.
+
 * templates/index.html
     * Main page and embedded frontend Javascript code which is used to make asynchronous requests to our backend (what year we want displayed) and use the requested data to update our Google Maps and AnyChart instances.
 
