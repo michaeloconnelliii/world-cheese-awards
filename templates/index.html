@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html> 
+<head> 
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" /> 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato&family=Prata&display=swap" rel="stylesheet">
+  <title>The World Cheese Awards Super Gold Winners' Locations</title> 
+  <!--Google Maps-->
+  <script src="http://maps.google.com/maps/api/js?key=MyAPIKey" type="text/javascript"></script>
+  <!--Any Chart-->
+  <script src="https://cdn.anychart.com/releases/8.0.1/js/anychart-core.min.js"></script>
+  <script src="https://cdn.anychart.com/releases/8.0.1/js/anychart-pie.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+</head> 
+<body>
+    <div class="overlay">
+        <div class="description-container">
+            <h1>The World Cheese Awards Super Gold Winners' Locations</h1>
+            <p>The World Cheese Awards is an annual event where the world's best cheeses are judged on their rind, body, color, texture and taste. Judges decide which cheeses recieve super gold, gold, silver and bronze awards. Super gold is rarest award and the highest achievement a cheesemaker can recieve at the World Cheese Awards. For more information about the event and judging process <a href="https://gff.co.uk/awards/world-cheese-awards/">visit their webpage</a>.</p> 
+            <p>The data displayed on this webpage is the name, company, company website and location of the super gold award winners from 2016 to 2021.</p>
+            <div class="selection-container">
+                <div class="drop-down-container">
+                    <label for="years">Display year:</label>
+                    <select name="years" id="year">
+                        <option value="2021">2021</option>
+                        <option value="2019">2019</option>
+                        <option value="2018">2018</option>
+                        <option value="2017">2017</option>
+                        <option value="2016">2016</option>
+                    </select>
+                </div>
+                <button id="submit">Submit</button>
+            </div>
+        </div>
+        <div class="data-container">
+            <div id="map" class="map"></div>
+            <div id="chart" class="chart"></div>
+        </div>
+        <footer>
+            <p>Created and designed by <a href="https://github.com/michaeloconnelliii">Michael O'Connell</a></p>
+        </footer>
+    </div>
+
+    <script type="text/javascript"> 
+
+        let submit = document.getElementById('submit');
+        let submit2 = document.getElementById('submit2');
+        let selectYear = document.getElementById('select-year');
+
+        // Setup the chart that will be used for each query for initial screen size
+        window.chart = anychart.pie();
+        
+        if(window.innerWidth < 600) {
+            window.chart.legend().position("bottom");
+            window.chart.legend().itemsLayout("horizontal");
+        } else {
+            window.chart.legend().position("right");
+            window.chart.legend().itemsLayout("vertical");
+        }
+        
+        
+        async function getCheeseData() {
+            let year = getSelectedYear();
+            const response = await fetch('/allCheeseData?' + new URLSearchParams({
+                year: year
+            }).toString(), {method: "GET"});
+            let queryResult = await response.json();
+            let mapsResult = queryResult['mapsResult'];
+            let chartResult = queryResult['chartResult'];
+            mapsResult = JSON.parse(mapsResult);
+            return {mapsResult,chartResult};
+        }
+
+        function getSelectedYear() {
+            let select = document.getElementById('year');
+            let year = select.options[select.selectedIndex].value;
+            return year;
+        }
+
+        async function populateMapsAndChart() {
+            let {mapsResult, chartResult} = await getCheeseData();
+            
+            // Initalize the map
+            let map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 1.4,
+                center: new google.maps.LatLng(0, 0),
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
+        
+            // Get location data and populate the map
+            let locations = [];
+            for(cheeseName in mapsResult) {
+                const cheeseData = mapsResult[cheeseName];
+                const companyNameAndCheese = `<p>Company: <a href="${cheeseData['website']}">${cheeseData['company']}</a></p><p>Award winning cheese: ${cheeseName}`;
+                const location = [ companyNameAndCheese,  cheeseData['lat'], cheeseData['long'] ];
+                locations.push(location);
+            }
+
+            let marker, i;
+            let infowindow = new google.maps.InfoWindow();
+        
+            for (i = 0; i < locations.length; i++) {  
+                marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(locations[i][1], locations[i][2]),
+                    map: map
+                });
+
+
+                google.maps.event.addListener(marker, 'click', (function(marker, i) {
+                    return function() {
+                        infowindow.setContent(locations[i][0]);
+                        infowindow.open(map, marker);
+                    }
+                })(marker, i));
+            }
+
+            // set the chart title
+            window.chart.title(`Percent of Total Super Gold Awards by Country: World Cheese Awards ${getSelectedYear()}`);
+
+            // add the data
+            window.chart.data(chartResult);
+
+            // display the chart in the container
+            window.chart.container('chart');
+            window.chart.draw();
+        }
+
+        function updateChartOrientation() {
+            if(window.innerWidth < 600) {
+                window.chart.legend().position("bottom");
+                window.chart.legend().itemsLayout("horizontal");
+            } else {
+                window.chart.legend().position("right");
+                window.chart.legend().itemsLayout("vertical");
+            }
+        }
+
+        // Event listeners
+        submit.addEventListener('click', populateMapsAndChart);
+        window.addEventListener('resize', updateChartOrientation);
+        
+        // Click our submit button on page load
+        window.onload=function(){
+            document.getElementById("submit").click();
+        };
+        
+    </script>
+</body>
+</html>
