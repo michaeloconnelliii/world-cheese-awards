@@ -1,6 +1,4 @@
 # The Locations of the World Cheese Award Super Gold Winners
-## Project Demo
-* Currently <a href="https://worlds-best-cheese.herokuapp.com/">hosted on Heroku</a>.
 
 ## How to use
 * Simply choose the year you want displayed and click 'submit'.
